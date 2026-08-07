@@ -2,3 +2,9 @@
 
 ## Requirements and Reccomendations ##   
 I would reccomend a local conda enviroment to install the required modules such as pyserial, pyqt5, ... 
+
+Run the laptop ground station with: 
+``` bash
+python ground-station.py
+```  
+
