@@ -21,6 +21,7 @@ TEAM_ID = "1083"
 #                     "CONTAINER_RELEASED", "PAYLOAD_RELEASED", "PARAGLIDER_EJECTED", "PARAGLIDER_ACTIVE", "TARGET_LATITUDE",
 #                     "TARGET_LONGITUDE"]
 
+# TODO: add solar voltage to telemetry fields when ready 
 TELEMETRY_FIELDS = ["TEAM_ID", "MISSION_TIME", "PACKET_COUNT", "MODE", "STATE", "ALTITUDE",
                     "TEMPERATURE", "PRESSURE", "VOLTAGE", "CURRENT", "GYRO_R", "GYRO_P", "GYRO_Y", "ACCEL_R",
                     "ACCEL_P", "ACCEL_Y", "GPS_TIME", "GPS_ALTITUDE", "GPS_LATITUDE", "GPS_LONGITUDE", 
@@ -52,47 +53,47 @@ packets_sent = 0
 
 # xbee communication parameters
 BAUDRATE = 115200
-COM_PORT = "COM7"    # USB0 on raspberry pi
+COM_PORT = "COM3"    # USB0 on raspberry pi
 # COM_PORT = "/dev/ttyUSB0"    # USB0 on raspberry pi
 
 MAKE_CSV_FILE = True
  # Set to True to create a CSV log file of telemetry data, must be set before running the program to work
-SER_DEBUG = False       # Set as True whenever testing without XBee connected
+SER_DEBUG = True       # Set as True whenever testing without XBee connected
 
 START_DELIMITER = "~"
 
 ser = None
 serialConnected = False
 
-# """ The following serial function is used when windows laptop is used for GS and COM_PORT is set to the correct port number for the Xbee """ 
-# def connect_Serial():
-#     global ser
-#     global serialConnected
-#     if (not SER_DEBUG):
-#         try:
-#             # ser = serial.Serial("/dev/tty.usbserial-AR0JQZCB", BAUDRATE, timeout=0.05)
-#             ser = serial.Serial("COM" + str(COM_PORT), BAUDRATE, timeout=0.05)
-#             serialConnected = True
-#             print("Connected to Xbee")
-#         except serial.serialutil.SerialException as e:
-#             if (serialConnected):
-#                 print(f"Could not connect to Xbee: {e}")
-#             serialConnected = False
-
-
-""" The following serial function is used when raspberry pi or linux machine is used for GS and is set to COM_PORT = "/dev/ttyUSB0" """ 
+""" The following serial function is used when windows laptop is used for GS and COM_PORT is set to the correct port number for the Xbee """ 
 def connect_Serial():
     global ser
     global serialConnected
     if (not SER_DEBUG):
         try:
-            ser = serial.Serial(COM_PORT, BAUDRATE, timeout=0.05)
+            # ser = serial.Serial("/dev/tty.usbserial-AR0JQZCB", BAUDRATE, timeout=0.05)
+            ser = serial.Serial("COM" + str(COM_PORT), BAUDRATE, timeout=0.05)
             serialConnected = True
             print("Connected to Xbee")
         except serial.serialutil.SerialException as e:
             if (serialConnected):
                 print(f"Could not connect to Xbee: {e}")
             serialConnected = False
+
+
+# """ The following serial function is used when raspberry pi or linux machine is used for GS and is set to COM_PORT = "/dev/ttyUSB0" """ 
+# def connect_Serial():
+#     global ser
+#     global serialConnected
+#     if (not SER_DEBUG):
+#         try:
+#             ser = serial.Serial(COM_PORT, BAUDRATE, timeout=0.05)
+#             serialConnected = True
+#             print("Connected to Xbee")
+#         except serial.serialutil.SerialException as e:
+#             if (serialConnected):
+#                 print(f"Could not connect to Xbee: {e}")
+#             serialConnected = False
 
 def disconnect_Serial():
     global ser
@@ -279,8 +280,9 @@ class GroundStationWindow(QtWidgets.QMainWindow):
         '''
         Disable simulation when any button is pressed
         '''
-        global sim_enable
+        global sim_enable, sim
         sim_enable = False
+        sim = False
         self.update_sim_button_colors()
     
     def reset_state(self):
@@ -418,6 +420,14 @@ class GroundStationWindow(QtWidgets.QMainWindow):
         self.voltage_subplot = self.voltage_figure.add_subplot(111)
         self.voltage_y_data = []
 
+        # Solar panel voltage graph. If no solar packet field is received, it stays at zero.
+        self.solar_figure = Figure()
+        self.solar_canvas = FigureCanvas(self.solar_figure)
+        # UI now includes `solar_graph`, so add the canvas directly.
+        self.solar_graph.layout().addWidget(self.solar_canvas)
+        self.solar_subplot = self.solar_figure.add_subplot(111)
+        self.solar_y_data = []
+
         # self.timer = QtCore.QTimer()
         # self.timer.setInterval(100)  # 100 ms update
         # self.timer.timeout.connect(self.update_graphs)
@@ -436,6 +446,14 @@ class GroundStationWindow(QtWidgets.QMainWindow):
         self.rotation_y_y_data.append(float(telemetry["GYRO_Y"]))
         self.current_y_data.append(float(telemetry["CURRENT"]))
         self.voltage_y_data.append(float(telemetry["VOLTAGE"]))
+
+        # Solar voltage should only be plotted when the payload actually sends it.
+        # If the field is absent, keep the graph at zero instead of matching the main battery voltage.
+        try:
+            solar_val = float(telemetry["SOLAR_VOLTAGE"])
+        except (KeyError, ValueError, TypeError):
+            solar_val = 0.0
+        self.solar_y_data.append(solar_val)
 
         # self.x_data.append(self.counter)
         # self.altitude_y_data.append(random.randint(0,10))
@@ -461,6 +479,7 @@ class GroundStationWindow(QtWidgets.QMainWindow):
             self.rotation_y_y_data.pop(0)
             self.current_y_data.pop(0)
             self.voltage_y_data.pop(0)
+            self.solar_y_data.pop(0)
 
         # Plot
         self.alt_subplot.clear()
@@ -492,6 +511,12 @@ class GroundStationWindow(QtWidgets.QMainWindow):
         self.voltage_subplot.set_title("Voltage (V)")
         self.voltage_canvas.draw()
 
+        # Solar panel voltage plot
+        self.solar_subplot.clear()
+        self.solar_subplot.plot(self.x_data, self.solar_y_data, color='gold')
+        self.solar_subplot.set_title("Solar Panel Voltage (V)")
+        self.solar_canvas.draw()
+
     def reset_graphs(self):
         self.x_data = []
         self.altitude_y_data = []
@@ -503,6 +528,7 @@ class GroundStationWindow(QtWidgets.QMainWindow):
         self.rotation_y_y_data = []
         self.current_y_data = []
         self.voltage_y_data = []
+        self.solar_y_data = []
 
     def set_coordinates(self):
         dialog = CoordinatesDiaglog()
@@ -724,30 +750,104 @@ def write_xbee(cmd):
     checksum = calc_checksum(f"{cmd}")
     frame = f"{START_DELIMITER}{cmd},{checksum:02X}"
 
+    # Debug mode: simulate a local packet instead of sending over serial so the UI can still be tested
+    if SER_DEBUG:
+        print(f"[DEBUG] Packet queued locally: {cmd}")
+        return
+
     # Send to XBee
-    if (not SER_DEBUG):
-        try:
-            if (ser):
-                ser.write(frame.encode())
-                print(f"Packet Sent: {cmd}")
-        except serial.serialutil.SerialException as e:
-            print(f"Packet Not Sent: {e}")
+    try:
+        if (ser):
+            ser.write(frame.encode())
+            print(f"Packet Sent: {cmd}")
+    except serial.serialutil.SerialException as e:
+        print(f"Packet Not Sent: {e}")
+
+
+def build_debug_telemetry_packet(sim_value):
+    '''
+    Create a synthetic packet matching the expected telemetry format for GUI testing.
+    Use "F" (flight) when not in sim mode so disabling the local simulator stops the loop.
+    '''
+    global packet_count
+    packet_count += 1
+
+    mode = "S" if sim_enable else "F"
+
+    return [
+        TEAM_ID,
+        "00:00:00",
+        str(packet_count),
+        mode,
+        "FLIGHT",
+        str(float(sim_value)),
+        "22.5",
+        str(float(sim_value) + 5.0),
+        "12.5",
+        "0.55",
+        "1.0",
+        "2.0",
+        "3.0",
+        "4.0",
+        "5.0",
+        "6.0",
+        "00:00:00",
+        "120.0",
+        "33.123456",
+        "-117.123456",
+        "8",
+        "OK",
+        "90.0",
+        "300.0",
+        "FALSE",
+        "FALSE",
+        "FALSE",
+        "FALSE",
+        "0.0",
+        "0.0",
+        "0.0",
+    ]
+
 
 def send_simp_data():
     '''
-    Send simulated pressure data from the csv file at 1 Hz
+    Send simulated pressure data from the csv file at 1 Hz.
     '''
     global sim
+    global sim_enable
     global csv_indexer
-    csv_file = open(os.path.join(os.path.dirname(__file__), "old_25_26_pres.csv"), 'r')
-    csv_lines = csv_file.readlines()
+
+    sim_csv = os.path.join(os.path.dirname(__file__), "sim_data.csv")
+    fallback_csv = os.path.join(os.path.dirname(__file__), "old_25_26_pres.csv")
+
+    if os.path.exists(sim_csv):
+        csv_path = sim_csv
+    elif os.path.exists(fallback_csv):
+        csv_path = fallback_csv
+    else:
+        print("No simulation CSV file found. Expected sim_data.csv or old_25_26_pres.csv")
+        return
+
+    with open(csv_path, 'r') as csv_file:
+        csv_lines = csv_file.readlines()
+
     csv_indexer = 0
     while True:
-        if sim and csv_indexer < len(csv_lines):
+        # When the GUI disables simulation, stop immediately instead of continuing to feed data.
+        if not sim_enable and not sim:
+            time.sleep(0.2)
+            continue
+
+        if (sim or sim_enable) and csv_indexer < len(csv_lines):
             csv_num = str(csv_lines[csv_indexer].strip())
-            write_xbee('CMD,' + TEAM_ID + ',SIMP,' + str(csv_num))
+
+            if SER_DEBUG:
+                parse_xbee(build_debug_telemetry_packet(csv_num))
+            else:
+                write_xbee('CMD,' + TEAM_ID + ',SIMP,' + str(csv_num))
+
             csv_indexer += 1
-            
+
         time.sleep(1)
 
 

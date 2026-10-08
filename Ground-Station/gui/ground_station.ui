@@ -1539,6 +1539,9 @@ QPushButton:hover {
          <item row="0" column="4">
           <layout class="QVBoxLayout" name="voltage_graph"/>
          </item>
+         <item row="0" column="5">
+          <layout class="QVBoxLayout" name="solar_graph"/>
+         </item>
          <item row="0" column="1">
           <layout class="QVBoxLayout" name="acceleration_graph"/>
          </item>
