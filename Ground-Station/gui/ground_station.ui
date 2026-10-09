@@ -374,6 +374,21 @@ QPushButton:hover {
                   </widget>
                  </item>
                  <item>
+                  <widget class="QLabel" name="solar_label">
+                   <property name="font">
+                    <font>
+                     <family>Sans Serif Collection</family>
+                     <pointsize>10</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="text">
+                    <string>Solar Panel Voltage (V):</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
                   <widget class="QLabel" name="current_label">
                    <property name="font">
                     <font>
@@ -541,6 +556,21 @@ QPushButton:hover {
                  </item>
                  <item>
                   <widget class="QLabel" name="VOLTAGE">
+                   <property name="font">
+                    <font>
+                     <family>Sans Serif Collection</family>
+                     <pointsize>10</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="text">
+                    <string>N/A</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="SOLAR_VOLTAGE">
                    <property name="font">
                     <font>
                      <family>Sans Serif Collection</family>

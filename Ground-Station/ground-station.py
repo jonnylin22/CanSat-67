@@ -21,9 +21,8 @@ TEAM_ID = "1083"
 #                     "CONTAINER_RELEASED", "PAYLOAD_RELEASED", "PARAGLIDER_EJECTED", "PARAGLIDER_ACTIVE", "TARGET_LATITUDE",
 #                     "TARGET_LONGITUDE"]
 
-# TODO: add solar voltage to telemetry fields when ready 
 TELEMETRY_FIELDS = ["TEAM_ID", "MISSION_TIME", "PACKET_COUNT", "MODE", "STATE", "ALTITUDE",
-                    "TEMPERATURE", "PRESSURE", "VOLTAGE", "CURRENT", "GYRO_R", "GYRO_P", "GYRO_Y", "ACCEL_R",
+                    "TEMPERATURE", "PRESSURE", "VOLTAGE", "SOLAR_VOLTAGE", "CURRENT", "GYRO_R", "GYRO_P", "GYRO_Y", "ACCEL_R",
                     "ACCEL_P", "ACCEL_Y", "GPS_TIME", "GPS_ALTITUDE", "GPS_LATITUDE", "GPS_LONGITUDE", 
                     "GPS_SATS","CMD_ECHO", "HEADING", "MAX_ALTITUDE", "CONTAINER_RELEASED", "PAYLOAD_RELEASED",
                     "PARAGLIDER_EJECTED", "PARAGLIDER_ACTIVE", "TARGET_LATITUDE",
@@ -784,6 +783,7 @@ def build_debug_telemetry_packet(sim_value):
         "22.5",
         str(float(sim_value) + 5.0),
         "12.5",
+        str(float(sim_value) * 0.8),
         "0.55",
         "1.0",
         "2.0",
