@@ -5,7 +5,7 @@
 #define INA219_ADDR 0x40
  
 typedef struct {
-    float v_read;
+    float bus_v;
     float shunt_mv;
     float current_ma; 
 } ina219_reading_t;

@@ -29,7 +29,6 @@ esp_err_t ina219_init(i2c_master_bus_handle_t bus, i2c_master_dev_handle_t *dev)
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
         .device_address = INA219_ADDR,
         .scl_speed_hz = FREQ_HZ,
-        .scl_wait_us = TIMEOUT_MS
     };
     return i2c_master_bus_add_device(bus, &dev_cfg, dev);
 }
